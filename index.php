@@ -45,17 +45,79 @@ if (isset($_GET) && !empty($_GET)) {
     $keysGetArray = array_keys($_GET);
     $urlArray = explode('/', $keysGetArray[0]);
 
-    if (isset($urlList[$urlArray['0']][$_SERVER['REQUEST_METHOD']]) && !empty($urlList[$urlArray['0']][$_SERVER['REQUEST_METHOD']])) {
+    $url = $urlArray['0'];
+    $requestMethod = $_SERVER['REQUEST_METHOD'];
 
-        $func = $urlList[$urlArray['0']][$_SERVER['REQUEST_METHOD']];
+    if (isset($urlList[$url][$requestMethod]) && !empty($urlList[$url][$requestMethod])) {
 
-        if (count($urlArray) == 1) {
+        $func = $urlList[$url][$requestMethod];
 
-            var_dump($func());
+        switch ($requestMethod) {
 
-        } else {
+            case 'GET':
 
-            var_dump($func($urlArray['1']));
+                if (count($urlArray) == 1) {
+
+                    var_dump($func());
+
+                } elseif (count($urlArray) > 1) {
+
+                    if ($urlArray[1] != '') {
+
+                        var_dump($func($urlArray['1']));
+
+                    } else {
+
+                        var_dump($func());
+
+                    }
+
+                }
+
+                break;
+
+            case 'POST':
+
+                if (isset($_POST) && !empty($_POST)) {
+
+                    var_dump($func($_POST));
+
+                } else {
+
+                    echo 'Пустой запрос';
+
+                }
+
+                break;
+
+            case 'PUT':
+
+                parse_str(file_get_contents('php://input'), $_PUT);
+
+                if (isset($_PUT) && !empty($_PUT)) {
+
+                    var_dump($func($_PUT));
+
+                } else {
+
+                    echo 'Пустой запрос';
+
+                }
+
+                break;
+
+            case 'DELETE':
+
+                if (count($urlArray) > 1) {
+
+                    if ($urlArray[1] != '') {
+
+                        var_dump($func($urlArray['1']));
+
+                    }
+
+                }
+
 
         }
 
