@@ -58,17 +58,17 @@ if (isset($_GET) && !empty($_GET)) {
 
                 if (count($urlArray) == 1) {
 
-                    var_dump($func());
+                    var_dump($func($_GET));
 
                 } elseif (count($urlArray) > 1) {
 
                     if ($urlArray[1] != '') {
 
-                        var_dump($func($urlArray['1']));
+                        var_dump($func($urlArray['1'], $_GET));
 
                     } else {
 
-                        var_dump($func());
+                        var_dump($func($_GET));
 
                     }
 
@@ -117,7 +117,6 @@ if (isset($_GET) && !empty($_GET)) {
                     }
 
                 }
-
 
         }
 

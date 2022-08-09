@@ -155,24 +155,105 @@ class User {
 
     }
 
-    static function login()
+    static function login($get) : string
     {
 
-        return 'Логин';
+        if (isset($get['email']) && !empty($get['email'])) {
+
+            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+            $statement = $connection->prepare("SELECT hash FROM user WHERE email = ?");
+            $statement->execute([$get['email']]);
+            $result = $statement->fetch();
+
+            if ($result != false) {
+
+                if (isset($get['password']) && !empty($get['password'])) {
+
+                    if (password_verify($get['password'], $result['hash'])) {
+
+                        session_start();
+
+                        return 'Вы авторизованы';
+
+                    } else {
+
+                        return 'Указан неверный пароль';
+
+                    }
+
+                } else {
+
+                    return 'Пароль пользователя не задан';
+
+                }
+
+            } else {
+
+                return 'Пользователь с указанным email не задан';
+
+            }
+
+        } else {
+
+            return 'Email пользователя не задан';
+
+        }
 
     }
 
     static function logout()
     {
 
-        echo 'Выход';
+        if (isset($_COOKIE['PHPSESSID'])) {
+
+            foreach ($_COOKIE as $key => $cookie) {
+
+                setcookie($key, '', time()-1000);
+                setcookie($key, '', time()-1000, '/');
+
+            }
+
+            header('Location: /');
+
+        } else {
+
+            return 'Вы не авторизованы';
+
+        }
 
     }
 
-    static function resetPassword()
+    static function resetPassword($get)
     {
 
-        echo 'Сброс пароля';
+        if (isset($get['email']) && !empty($get['email'])) {
+
+            $email = $get['email'];
+
+            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+            $statement = $connection->prepare("SELECT id FROM user WHERE email = ?");
+            $statement->execute([$email]);
+            $result = $statement->fetch();
+
+            if ($result != false) {
+
+                $code = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 24);
+                $statement = $connection->prepare("INSERT INTO reset_password_code(code, user_id) VALUES (?, ?)");
+                $statement->execute([$code, $result['id']]);
+
+                require_once './phpmailer/send.php';
+                $letterBody = 'Для восстановления пароля перейдите по <a href="http://' . $_SERVER['SERVER_NAME'] . '/reset_password_form.php?code=' . $code . '">' . 'ссылке</a>.';
+                sendEmail($email, 'Восстановление пароля', $letterBody);
+
+                return 'На вашу почту отправлено письмо со ссылкой на восстановление пароля';
+
+            } else {
+
+                return 'Пользователь с указанным email не найден';
+
+            }
+
+        }
 
     }
 
