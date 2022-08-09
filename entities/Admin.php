@@ -5,13 +5,36 @@ class Admin {
     static public function get($id = NULL)
     {
 
-        if (isset($id)) {
+        if (isset($_COOKIE['PHPSESSION']) && !empty($_COOKIE['PHPSESSION'])) {
 
-            return 'Информация о пользователе ' . $id;
+            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+            $statement = $connection->prepare("SELECT user_id FROM session WHERE session = ?");
+            $statement->execute([$_COOKIE['PHPSESSION']]);
+            $result = $statement->fetch();
+
+            if ($result != false) {
+
+                if (isset($id)) {
+
+                    return 'Информация о пользователе ' . $id;
+
+                } else {
+
+                    return 'Список пользователей';
+
+                }
+
+            } else {
+
+                http_response_code(401);
+                return 'Доступ запрещен';
+
+            }
 
         } else {
 
-            return 'Список пользователей';
+            http_response_code(401);
+            return 'Доступ запрещен';
 
         }
 
