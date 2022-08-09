@@ -158,10 +158,34 @@ class User {
     static function login($get) : string
     {
 
+        if (isset($_COOKIE['PHPSESSID']) && !empty($_COOKIE['PHPSESSID'])) {
+
+            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+            $statement = $connection->prepare("SELECT * FROM session WHERE session = ?");
+            $statement->execute([$_COOKIE['PHPSESSID']]);
+            $session = $statement->fetch();
+
+            if ($session != false) {
+
+                return 'Вы уже авторизованы';
+
+            } else {
+
+                foreach ($_COOKIE as $key => $cookie) {
+
+                    setcookie($key, '', time()-1000);
+                    setcookie($key, '', time()-1000, '/');
+
+                }
+
+            }
+
+        }
+
         if (isset($get['email']) && !empty($get['email'])) {
 
             $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
-            $statement = $connection->prepare("SELECT hash FROM user WHERE email = ?");
+            $statement = $connection->prepare("SELECT * FROM user WHERE email = ?");
             $statement->execute([$get['email']]);
             $result = $statement->fetch();
 
@@ -172,6 +196,9 @@ class User {
                     if (password_verify($get['password'], $result['hash'])) {
 
                         session_start();
+
+                        $statement = $connection->prepare("INSERT INTO session (session, user_id) VALUES (?, ?)");
+                        $statement->execute([session_id(), $result['id']]);
 
                         return 'Вы авторизованы';
 
