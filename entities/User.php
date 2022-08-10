@@ -2,7 +2,7 @@
 
 class User {
 
-    static public function list() : array
+    static public function list($param, $id = NULL) : array
     {
 
         $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
@@ -13,7 +13,7 @@ class User {
 
     }
 
-    static public function get($id) : string
+    static public function get($param, $id = NULL) : string
     {
 
         $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
@@ -24,36 +24,53 @@ class User {
 
     }
 
-    static public function add($post) : string
+    static public function add($post, $id = NULL) : string
     {
 
         if (isset($post['email']) && !empty($post['email'])) {
 
             if (isset($post['password']) && !empty($post['password'])) {
 
-                $hash = password_hash($post['password'], PASSWORD_BCRYPT);
+                $email = $post['email'];
 
                 $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
-                $statement = $connection->prepare("INSERT INTO user (email, hash) VALUES (?, ?)");
-                $statement->execute([$post['email'], $hash]);
+                $statement = $connection->prepare("SELECT id FROM user WHERE email = ?");
+                $statement->execute([$email]);
+                $result = $statement->fetch();
 
-                return 'Пользователь добавлен';
+                if (($result == false)) {
+
+                    $hash = password_hash($post['password'], PASSWORD_BCRYPT);
+
+                    $statement = $connection->prepare("INSERT INTO user (email, hash) VALUES (?, ?)");
+                    $statement->execute([$email, $hash]);
+
+                    return 'Пользователь добавлен';
+
+                } else {
+
+                    http_response_code(400);
+                    return 'Пользователь с указанным email уже существует';
+
+                }
 
             } else {
 
+                http_response_code(400);
                 return 'Не задан пароль';
 
             }
 
         } else {
 
+            http_response_code(400);
             return 'Не задан e-mail пользователя';
 
         }
 
     }
 
-    static public function update($put) : string
+    static public function update($put, $id = NULL) : string
     {
 
         if (isset($put['id']) && !empty($put['id'])) {
@@ -71,10 +88,25 @@ class User {
 
                 if (isset($put['email']) && !empty($put['email'])) {
 
-                    $statement = $connection->prepare("UPDATE user SET email = ? WHERE id = ?");
-                    $statement->execute([$put['email'], $id]);
+                    $email = $put['email'];
 
-                    $statusString .= 'Email обоновлен. ';
+                    $statement = $connection->prepare("SELECT id FROM user WHERE email = ?");
+                    $statement->execute([$email]);
+                    $result = $statement->fetch();
+
+                    if (($result == false) || ($result['id'] == $id)) {
+
+                        $statement = $connection->prepare("UPDATE user SET email = ? WHERE id = ?");
+                        $statement->execute([$email, $id]);
+
+                        $statusString .= 'Email обоновлен. ';
+
+                    } else {
+
+                        http_response_code(400);
+                        return 'Пользователь с указанным email уже существует';
+
+                    }
 
                 }
 
@@ -120,19 +152,21 @@ class User {
 
             } else {
 
+                http_response_code(404);
                 return 'Пользователь с указанным id не найден';
 
             }
 
         } else {
 
+            http_response_code(400);
             return 'Не указан id пользователя';
 
         }
 
     }
 
-    static public function delete($id) : string
+    static public function delete($param, $id = NULL) : string
     {
 
         $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
@@ -149,13 +183,14 @@ class User {
 
         } else {
 
+            http_response_code(404);
             return 'Не найден пользователь, которого вы хотите удалить';
 
         }
 
     }
 
-    static function login($get) : string
+    static function login($get, $id = NULL) : string
     {
 
         if (isset($_COOKIE['PHPSESSID']) && !empty($_COOKIE['PHPSESSID'])) {
@@ -204,31 +239,35 @@ class User {
 
                     } else {
 
+                        http_response_code(401);
                         return 'Указан неверный пароль';
 
                     }
 
                 } else {
 
+                    http_response_code(400);
                     return 'Пароль пользователя не задан';
 
                 }
 
             } else {
 
-                return 'Пользователь с указанным email не задан';
+                http_response_code(401);
+                return 'Пользователь с указанным email не найден';
 
             }
 
         } else {
 
+            http_response_code(400);
             return 'Email пользователя не задан';
 
         }
 
     }
 
-    static function logout()
+    static function logout($param, $id = NULL)
     {
 
         if (isset($_COOKIE['PHPSESSID'])) {
@@ -250,7 +289,7 @@ class User {
 
     }
 
-    static function resetPassword($get)
+    static function resetPassword($get, $id = NULL)
     {
 
         if (isset($get['email']) && !empty($get['email'])) {
@@ -276,6 +315,7 @@ class User {
 
             } else {
 
+                http_response_code(401);
                 return 'Пользователь с указанным email не найден';
 
             }

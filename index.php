@@ -20,107 +20,78 @@ spl_autoload_register('loaderEntities');
 //START Роутинг -----------------------------------------------
 
 $urlList = [
-    'user' => [
+    'admin/user/' => [
+        'GET' => 'Admin::get',
+        'PUT' => 'Admin::update',
+        'DELETE' => 'Admin::delete'
+    ],
+    'login/' => [
+        'GET' => 'User::login'
+    ],
+    'logout/' => [
+        'GET'=> 'User::logout'
+    ],
+    'reset_password/' => [
+        'GET' => 'User::resetPassword'
+    ],
+    'user/' => [
         'GET' => 'User::list',
         'POST' => 'User::add',
         'PUT' => 'User::update',
         'DELETE' => 'User::delete'
     ],
-    'users' => [
+    'users/' => [
         'GET' => 'User::get'
     ],
-    'login' => [
-        'GET' => 'User::login'
-    ],
-    'logout' => [
-        'GET'=> 'User::logout'
-    ],
-    'reset_password' => [
-        'GET' => 'User::resetPassword'
-    ]
 ];
+
+$isValidRequest = false;
 
 if (isset($_GET) && !empty($_GET)) {
 
     $keysGetArray = array_keys($_GET);
-    $urlArray = explode('/', $keysGetArray[0]);
-
-    $url = $urlArray['0'];
     $requestMethod = $_SERVER['REQUEST_METHOD'];
+    $func = 'Метод не найден';
 
-    if (isset($urlList[$url][$requestMethod]) && !empty($urlList[$url][$requestMethod])) {
+    foreach ($urlList as $key => $url) {
 
-        $func = $urlList[$url][$requestMethod];
+        $patternWithId = '/^(' . str_replace('/', '\/', $key) . ')[0-9]\/$/';
+        $patternWithoutId = '/^(' . str_replace('/', '\/', $key) . ')$/';
 
-        switch ($requestMethod) {
+        if (isset($url[$requestMethod])) {
 
-            case 'GET':
+            if (preg_match($patternWithId, $keysGetArray[0])) {
 
-                if (count($urlArray) == 1) {
+                $isValidRequest = true;
 
-                    var_dump($func($_GET));
-
-                } elseif (count($urlArray) > 1) {
-
-                    if ($urlArray[1] != '') {
-
-                        var_dump($func($urlArray['1'], $_GET));
-
-                    } else {
-
-                        var_dump($func($_GET));
-
-                    }
-
-                }
-
-                break;
-
-            case 'POST':
-
-                if (isset($_POST) && !empty($_POST)) {
-
-                    var_dump($func($_POST));
-
-                } else {
-
-                    echo 'Пустой запрос';
-
-                }
-
-                break;
-
-            case 'PUT':
-
+                $func = $url[$requestMethod];
+                $urlArray = explode('/', $keysGetArray[0]);
+                $id = $urlArray[count($urlArray) - 2];
                 parse_str(file_get_contents('php://input'), $_PUT);
 
-                if (isset($_PUT) && !empty($_PUT)) {
+                var_dump($func(array_merge($_GET, $_PUT), $id));
 
-                    var_dump($func($_PUT));
+            } elseif (preg_match($patternWithoutId, $keysGetArray[0])) {
 
-                } else {
+                $isValidRequest = true;
 
-                    echo 'Пустой запрос';
+                $func = $url[$requestMethod];
+                parse_str(file_get_contents('php://input'), $_PUT);
 
-                }
+                var_dump($func(array_merge($_GET, $_PUT)));
 
-                break;
-
-            case 'DELETE':
-
-                if (count($urlArray) > 1) {
-
-                    if ($urlArray[1] != '') {
-
-                        var_dump($func($urlArray['1']));
-
-                    }
-
-                }
+            }
 
         }
 
     }
+
+}
+
+if (!$isValidRequest) {
+
+    http_response_code(405);
+    var_dump(false);
 
 }
 
