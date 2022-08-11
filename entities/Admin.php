@@ -49,26 +49,28 @@ class Admin {
     {
 
         $checkResult = self::checkAccess();
+        $methodUrl = 'http://' . $_SERVER['HTTP_HOST'];
 
         if ($checkResult['code'] == 200) {
 
             if (isset($id)) {
 
-                $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
-                $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
-                $statement->execute([$id]);
-
-                return json_encode($statement->fetch());
+                $methodUrl .= '/users/' . $id;
 
             } else {
 
-                $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
-                $statement = $connection->prepare("SELECT * FROM user");
-                $statement->execute();
-
-                return $statement->fetchAll();
+                $methodUrl .= '/user/';
 
             }
+
+            $ch = curl_init($methodUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_HEADER, false);
+            $response = curl_exec($ch);
+            curl_close($ch);
+
+            return $response;
 
         } else {
 
@@ -86,88 +88,26 @@ class Admin {
 
         if ($checkResult['code'] == 200) {
 
-            if (isset($id) && !empty($id)) {
+            if (isset($id)) {
 
                 http_response_code(405);
                 return false;
 
             } else {
 
-                if (isset($param['id']) && !empty($param['id'])) {
+                $methodUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/user/';
+                $ch = curl_init($methodUrl);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_HEADER, false);
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+                curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($param));
+                $response = curl_exec($ch);
+                $info = curl_getinfo($ch);
+                curl_close($ch);
 
-                    $id = $param['id'];
-
-                    $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
-                    $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
-                    $statement->execute([$id]);
-                    $result = $statement->fetch();
-
-                    if ($result != false) {
-
-                        $statusString = '';
-
-                        if (isset($param['email']) && !empty($param['email'])) {
-
-                            $statement = $connection->prepare("UPDATE user SET email = ? WHERE id = ?");
-                            $statement->execute([$param['email'], $id]);
-
-                            $statusString .= 'Email обоновлен. ';
-
-                        }
-
-                        if (isset($param['password']) && !empty($param['password'])) {
-
-                            $hash = password_hash($param['password'], PASSWORD_BCRYPT);
-
-                            $statement = $connection->prepare("UPDATE user SET hash = ? WHERE id = ?");
-                            $statement->execute([$hash, $id]);
-
-                            $statusString .= 'Пароль обоновлен. ';
-
-                        }
-
-                        if (isset($param['admin'])) {
-
-                            $admin = $param['admin'];
-
-                            if (($admin == 0) || ($admin == 1)) {
-
-                                $statement = $connection->prepare("UPDATE user SET admin = ? WHERE id = ?");
-                                $statement->execute([$admin, $id]);
-
-                                $statusString .= 'Роль обновлена.';
-
-                            } else {
-
-                                $statusString .= 'Не корректно задана роль пользователя';
-
-                            }
-
-                        }
-
-                        if ($statusString == '') {
-
-                            return 'Нет данных для обновления пользователя';
-
-                        } else {
-
-                            return $statusString;
-
-                        }
-
-                    } else {
-
-                        http_response_code(404);
-                        return 'Пользователь с указанным id не найден';
-
-                    }
-
-                } else {
-
-                    http_response_code(400);
-                    return 'Не указан id пользователя';
-
-                }
+                http_response_code($info['http_code']);
+                return $response;
 
             }
 
@@ -189,24 +129,18 @@ class Admin {
 
             if (isset($id) && !empty($id)) {
 
-                $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
-                $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
-                $statement->execute([$id]);
-                $result = $statement->fetch();
+                $methodUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/user/' . $id;
+                $ch = curl_init($methodUrl);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_HEADER, false);
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+                $response = curl_exec($ch);
+                $info = curl_getinfo($ch);
+                curl_close($ch);
 
-                if ($result != false) {
-
-                    $statement = $connection->prepare("DELETE FROM user WHERE id = ?");
-                    $statement->execute([$id]);
-
-                    return 'Пользователь удален';
-
-                } else {
-
-                    http_response_code(404);
-                    return 'Не найден пользователь, которого вы хотите удалить';
-
-                }
+                http_response_code($info['http_code']);
+                return $response;
 
             } else {
 

@@ -57,7 +57,7 @@ if (isset($_GET) && !empty($_GET)) {
 
     foreach ($urlList as $key => $url) {
 
-        $patternWithId = '/^(' . str_replace('/', '\/', $key) . ')[0-9]\/$/';
+        $patternWithId = '/^(' . str_replace('/', '\/', $key) . ')[0-9]$/';
         $patternWithoutId = '/^(' . str_replace('/', '\/', $key) . ')$/';
 
         if (isset($url[$requestMethod])) {
@@ -68,10 +68,10 @@ if (isset($_GET) && !empty($_GET)) {
 
                 $func = $url[$requestMethod];
                 $urlArray = explode('/', $keysGetArray[0]);
-                $id = $urlArray[count($urlArray) - 2];
+                $id = $urlArray[count($urlArray) - 1];
                 parse_str(file_get_contents('php://input'), $_PUT);
 
-                var_dump($func(array_merge($_GET, $_PUT), $id));
+                print_r($func(array_merge($_GET, $_PUT), $id));
 
             } elseif (preg_match($patternWithoutId, $keysGetArray[0])) {
 
@@ -80,7 +80,7 @@ if (isset($_GET) && !empty($_GET)) {
                 $func = $url[$requestMethod];
                 parse_str(file_get_contents('php://input'), $_PUT);
 
-                var_dump($func(array_merge($_GET, $_PUT)));
+                print_r($func(array_merge($_GET, $_PUT)));
 
             }
 
@@ -93,7 +93,7 @@ if (isset($_GET) && !empty($_GET)) {
 if (!$isValidRequest) {
 
     http_response_code(405);
-    var_dump(false);
+    print_r(false);
 
 }
 
