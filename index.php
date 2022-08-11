@@ -34,7 +34,8 @@ $urlList = [
         'GET'=> 'User::logout'
     ],
     'reset_password/' => [
-        'GET' => 'User::resetPassword'
+        'GET' => 'User::resetPassword',
+        'PUT' => 'User::updatePassword'
     ],
     'user/' => [
         'GET' => 'User::list',

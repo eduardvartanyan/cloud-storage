@@ -11,30 +11,21 @@ if (isset($_POST['password']) && !empty($_POST['password'])) {
 
         if (isset($_GET['code']) && !empty($_GET['code'])) {
 
-            $code = $_GET['code'];
+            $methodUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/reset_password/';
+            $ch = curl_init($methodUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_HEADER, false);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+            curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query(array_merge($_GET, $_POST)));
+            $response = curl_exec($ch);
+            $info = curl_getinfo($ch);
+            curl_close($ch);
 
-            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
-            $statement = $connection->prepare("SELECT user_id FROM reset_password_code WHERE code = ?");
-            $statement->execute([$code]);
-            $result = $statement->fetch();
+            if ($info['http_code'] == 200) {
 
-            if ($result != false) {
-
-                $userId = $result['user_id'];
-                $hash = password_hash($newPassword, PASSWORD_BCRYPT);
-
-                $statement = $connection->prepare("UPDATE user SET hash = ? WHERE id = ?");
-                $statement->execute([$hash, $userId]);
-
-                $statement = $connection->prepare("DELETE FROM reset_password_code WHERE code = ?");
-                $statement->execute([$code]);
-
-                echo 'Новый пароль успешно установлен';
                 $isSuccess = true;
-
-            } else {
-
-                $message = 'Что-то пошло не так. Перейдите еще раз по ссылке в письме.';
+                echo $response;
 
             }
 
