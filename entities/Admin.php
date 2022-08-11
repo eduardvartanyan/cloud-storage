@@ -2,12 +2,12 @@
 
 class Admin {
 
-    static public function get($param, $id = NULL)
+    static private function checkAccess()
     {
 
         if (isset($_COOKIE['PHPSESSID']) && !empty($_COOKIE['PHPSESSID'])) {
 
-            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+            $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT user_id FROM session WHERE session = ?");
             $statement->execute([$_COOKIE['PHPSESSID']]);
             $result = $statement->fetch();
@@ -23,40 +23,57 @@ class Admin {
 
                 if ($isAdmin) {
 
-                    if (isset($id)) {
-
-                        $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
-                        $statement->execute([$id]);
-
-                        return json_encode($statement->fetch());
-
-                    } else {
-
-                        $statement = $connection->prepare("SELECT * FROM user");
-                        $statement->execute();
-
-                        return $statement->fetchAll();
-
-                    }
+                    return array('code' => 200, 'message' => 'Доступ разрешен');
 
                 } else {
 
-                    http_response_code(403);
-                    return 'Доступ запрещен';
+                    return array('code' => 403, 'message' => 'Доступ запрещен');
 
                 }
 
             } else {
 
-                http_response_code(401);
-                return 'Доступ запрещен';
+                return array('code' => 401, 'message' => 'Доступ запрещен');
 
             }
 
         } else {
 
-            http_response_code(401);
-            return 'Доступ запрещен';
+            return array('code' => 401, 'message' => 'Доступ запрещен');
+
+        }
+
+    }
+
+    static public function get($param, $id = NULL)
+    {
+
+        $checkResult = self::checkAccess();
+
+        if ($checkResult['code'] == 200) {
+
+            if (isset($id)) {
+
+                $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
+                $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
+                $statement->execute([$id]);
+
+                return json_encode($statement->fetch());
+
+            } else {
+
+                $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
+                $statement = $connection->prepare("SELECT * FROM user");
+                $statement->execute();
+
+                return $statement->fetchAll();
+
+            }
+
+        } else {
+
+            http_response_code($checkResult['code']);
+            return $checkResult['message'];
 
         }
 
@@ -65,126 +82,99 @@ class Admin {
     static public function update($param, $id = NULL)
     {
 
-        if (isset($_COOKIE['PHPSESSID']) && !empty($_COOKIE['PHPSESSID'])) {
+        $checkResult = self::checkAccess();
 
-            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
-            $statement = $connection->prepare("SELECT user_id FROM session WHERE session = ?");
-            $statement->execute([$_COOKIE['PHPSESSID']]);
-            $result = $statement->fetch();
+        if ($checkResult['code'] == 200) {
 
-            if ($result != false) {
+            if (isset($id) && !empty($id)) {
 
-                $userId = $result['user_id'];
+                http_response_code(405);
+                return false;
 
-                $statement = $connection->prepare("SELECT admin FROM user WHERE id = ?");
-                $statement->execute([$userId]);
-                $result = $statement->fetch();
-                $isAdmin = (bool) $result['admin'];
+            } else {
 
-                if ($isAdmin) {
+                if (isset($param['id']) && !empty($param['id'])) {
 
-                    if (isset($id) && !empty($id)) {
+                    $id = $param['id'];
 
-                        http_response_code(405);
-                        return false;
+                    $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
+                    $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
+                    $statement->execute([$id]);
+                    $result = $statement->fetch();
 
-                    } else {
+                    if ($result != false) {
 
-                        if (isset($param['id']) && !empty($param['id'])) {
+                        $statusString = '';
 
-                            $id = $param['id'];
+                        if (isset($param['email']) && !empty($param['email'])) {
 
-                            $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
-                            $statement->execute([$id]);
-                            $result = $statement->fetch();
+                            $statement = $connection->prepare("UPDATE user SET email = ? WHERE id = ?");
+                            $statement->execute([$param['email'], $id]);
 
-                            if ($result != false) {
+                            $statusString .= 'Email обоновлен. ';
 
-                                $statusString = '';
+                        }
 
-                                if (isset($param['email']) && !empty($param['email'])) {
+                        if (isset($param['password']) && !empty($param['password'])) {
 
-                                    $statement = $connection->prepare("UPDATE user SET email = ? WHERE id = ?");
-                                    $statement->execute([$param['email'], $id]);
+                            $hash = password_hash($param['password'], PASSWORD_BCRYPT);
 
-                                    $statusString .= 'Email обоновлен. ';
+                            $statement = $connection->prepare("UPDATE user SET hash = ? WHERE id = ?");
+                            $statement->execute([$hash, $id]);
 
-                                }
+                            $statusString .= 'Пароль обоновлен. ';
 
-                                if (isset($param['password']) && !empty($param['password'])) {
+                        }
 
-                                    $hash = password_hash($param['password'], PASSWORD_BCRYPT);
+                        if (isset($param['admin'])) {
 
-                                    $statement = $connection->prepare("UPDATE user SET hash = ? WHERE id = ?");
-                                    $statement->execute([$hash, $id]);
+                            $admin = $param['admin'];
 
-                                    $statusString .= 'Пароль обоновлен. ';
+                            if (($admin == 0) || ($admin == 1)) {
 
-                                }
+                                $statement = $connection->prepare("UPDATE user SET admin = ? WHERE id = ?");
+                                $statement->execute([$admin, $id]);
 
-                                if (isset($param['admin'])) {
-
-                                    $admin = $param['admin'];
-
-                                    if (($admin == 0) || ($admin == 1)) {
-
-                                        $statement = $connection->prepare("UPDATE user SET admin = ? WHERE id = ?");
-                                        $statement->execute([$admin, $id]);
-
-                                        $statusString .= 'Роль обновлена.';
-
-                                    } else {
-
-                                        $statusString .= 'Не корректно задана роль пользователя';
-
-                                    }
-
-                                }
-
-                                if ($statusString == '') {
-
-                                    return 'Нет данных для обновления пользователя';
-
-                                } else {
-
-                                    return $statusString;
-
-                                }
+                                $statusString .= 'Роль обновлена.';
 
                             } else {
 
-                                http_response_code(404);
-                                return 'Пользователь с указанным id не найден';
+                                $statusString .= 'Не корректно задана роль пользователя';
 
                             }
 
+                        }
+
+                        if ($statusString == '') {
+
+                            return 'Нет данных для обновления пользователя';
+
                         } else {
 
-                            http_response_code(400);
-                            return 'Не указан id пользователя';
+                            return $statusString;
 
                         }
+
+                    } else {
+
+                        http_response_code(404);
+                        return 'Пользователь с указанным id не найден';
 
                     }
 
                 } else {
 
-                    http_response_code(403);
-                    return 'Доступ запрещен';
+                    http_response_code(400);
+                    return 'Не указан id пользователя';
 
                 }
-
-            } else {
-
-                http_response_code(401);
-                return 'Доступ запрещен';
 
             }
 
         } else {
 
-            http_response_code(401);
-            return 'Доступ запрещен';
+            http_response_code($checkResult['code']);
+            return $checkResult['message'];
 
         }
 
@@ -193,69 +183,42 @@ class Admin {
     static public function delete($param, $id = NULL)
     {
 
-        if (isset($_COOKIE['PHPSESSID']) && !empty($_COOKIE['PHPSESSID'])) {
+        $checkResult = self::checkAccess();
 
-            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
-            $statement = $connection->prepare("SELECT user_id FROM session WHERE session = ?");
-            $statement->execute([$_COOKIE['PHPSESSID']]);
-            $result = $statement->fetch();
+        if ($checkResult['code'] == 200) {
 
-            if ($result != false) {
+            if (isset($id) && !empty($id)) {
 
-                $userId = $result['user_id'];
-
-                $statement = $connection->prepare("SELECT admin FROM user WHERE id = ?");
-                $statement->execute([$userId]);
+                $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
+                $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
+                $statement->execute([$id]);
                 $result = $statement->fetch();
-                $isAdmin = (bool) $result['admin'];
 
-                if ($isAdmin) {
+                if ($result != false) {
 
-                    if (isset($id) && !empty($id)) {
+                    $statement = $connection->prepare("DELETE FROM user WHERE id = ?");
+                    $statement->execute([$id]);
 
-                        $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
-                        $statement->execute([$id]);
-                        $result = $statement->fetch();
-
-                        if ($result != false) {
-
-                            $statement = $connection->prepare("DELETE FROM user WHERE id = ?");
-                            $statement->execute([$id]);
-
-                            return 'Пользователь удален';
-
-                        } else {
-
-                            http_response_code(404);
-                            return 'Не найден пользователь, которого вы хотите удалить';
-
-                        }
-
-                    } else {
-
-                        http_response_code(405);
-                        return false;
-
-                    }
+                    return 'Пользователь удален';
 
                 } else {
 
-                    http_response_code(403);
-                    return 'Доступ запрещен';
+                    http_response_code(404);
+                    return 'Не найден пользователь, которого вы хотите удалить';
 
                 }
 
             } else {
 
-                http_response_code(401);
-                return 'Доступ запрещен';
+                http_response_code(405);
+                return false;
 
             }
 
         } else {
 
-            http_response_code(401);
-            return 'Доступ запрещен';
+            http_response_code($checkResult['code']);
+            return $checkResult['message'];
 
         }
 
