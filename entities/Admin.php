@@ -49,9 +49,10 @@ class Admin {
     {
 
         $checkResult = self::checkAccess();
-        $methodUrl = 'http://' . $_SERVER['HTTP_HOST'];
 
         if ($checkResult['code'] == 200) {
+
+            $methodUrl = 'http://' . $_SERVER['HTTP_HOST'];
 
             if (isset($id)) {
 

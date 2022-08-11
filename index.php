@@ -30,6 +30,18 @@ $urlList = [
     'check_reset_password_code/' => [
         'GET' => 'User::checkResetPasswordCode'
     ],
+    'directory/' => [
+        'GET' => 'File::directoryInfo',
+        'POST' => 'File::addDirectory',
+        'PUT' => 'File::renameDirectory',
+        'DELETE' => 'File::deleteDirectory'
+    ],
+    'file/' => [
+        'GET' => 'File::getFile',
+        'POST' => 'File::addFile',
+        'PUT' => 'File::editFile',
+        "DELETE" => 'File::deleteFile'
+    ],
     'login/' => [
         'GET' => 'User::login'
     ],
