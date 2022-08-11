@@ -451,4 +451,35 @@ class User {
 
     }
 
+    static public function checkResetPasswordCode($param, $id = NULL)
+    {
+
+        if (isset($id) && !empty($id)) {
+
+            http_response_code(405);
+            return false;
+
+        } else {
+
+            $code = $param['code'];
+
+            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+            $statement = $connection->prepare("SELECT user_id FROM reset_password_code WHERE code = ?");
+            $statement->execute([$_GET['code']]);
+            $result = $statement->fetch();
+
+            if ($result != false) {
+
+                return true;
+
+            } else {
+
+                return false;
+
+            }
+
+        }
+
+    }
+
 }

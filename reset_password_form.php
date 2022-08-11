@@ -74,12 +74,15 @@ if (!$isSuccess) {
 
         $code = $_GET['code'];
 
-        $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
-        $statement = $connection->prepare("SELECT user_id FROM reset_password_code WHERE code = ?");
-        $statement->execute([$_GET['code']]);
-        $result = $statement->fetch();
+        $methodUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/check_reset_password_code/?code=' . $code;
+        $ch = curl_init($methodUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_HEADER, false);
+        $response = curl_exec($ch);
+        curl_close($ch);
 
-        if ($result != false) {
+        if ($response == true) {
 
             if ($message != '') { ?>
 
@@ -106,11 +109,11 @@ if (!$isSuccess) {
 
         <?php
 
-    } else {
+        } else {
 
-        echo 'Ваша ссылка устарела. Воспользуйтесь восстановлением пароля повторно';
+            echo 'Ваша ссылка устарела. Воспользуйтесь восстановлением пароля повторно';
 
-    }
+        }
 
     } else {
 
@@ -124,5 +127,3 @@ if (!$isSuccess) {
 
 </body>
 </html>
-
-

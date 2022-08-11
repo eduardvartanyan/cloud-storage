@@ -27,6 +27,9 @@ $urlList = [
         'PUT' => 'Admin::update',
         'DELETE' => 'Admin::delete'
     ],
+    'check_reset_password_code/' => [
+        'GET' => 'User::checkResetPasswordCode'
+    ],
     'login/' => [
         'GET' => 'User::login'
     ],
