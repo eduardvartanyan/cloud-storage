@@ -5,7 +5,7 @@ class User {
     static public function list($param, $id = NULL) : array
     {
 
-        $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+        $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
         $statement = $connection->prepare("SELECT * FROM user");
         $statement->execute();
 
@@ -16,7 +16,7 @@ class User {
     static public function get($param, $id = NULL) : string
     {
 
-        $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+        $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
         $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
         $statement->execute([$id]);
 
@@ -33,7 +33,7 @@ class User {
 
                 $email = $post['email'];
 
-                $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+                $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
                 $statement = $connection->prepare("SELECT id FROM user WHERE email = ?");
                 $statement->execute([$email]);
                 $result = $statement->fetch();
@@ -77,7 +77,7 @@ class User {
 
             $id = $put['id'];
 
-            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+            $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
             $statement->execute([$id]);
             $result = $statement->fetch();
@@ -169,7 +169,7 @@ class User {
     static public function delete($param, $id = NULL) : string
     {
 
-        $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+        $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
         $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
         $statement->execute([$id]);
         $result = $statement->fetch();
@@ -195,7 +195,7 @@ class User {
 
         if (isset($_COOKIE['PHPSESSID']) && !empty($_COOKIE['PHPSESSID'])) {
 
-            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+            $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT * FROM session WHERE session = ?");
             $statement->execute([$_COOKIE['PHPSESSID']]);
             $session = $statement->fetch();
@@ -219,7 +219,7 @@ class User {
 
         if (isset($get['email']) && !empty($get['email'])) {
 
-            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+            $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT * FROM user WHERE email = ?");
             $statement->execute([$get['email']]);
             $result = $statement->fetch();
@@ -296,7 +296,7 @@ class User {
 
             $email = $get['email'];
 
-            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+            $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT id FROM user WHERE email = ?");
             $statement->execute([$email]);
             $result = $statement->fetch();

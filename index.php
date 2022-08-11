@@ -1,5 +1,7 @@
 <?php
 
+require_once './config.php';
+
 //START Автозагрузка классов ----------------------------------
 
 function loaderEntities($className)
