@@ -128,7 +128,7 @@ class Admin {
 
         if ($checkResult['code'] == 200) {
 
-            if (isset($id) && !empty($id)) {
+            if (isset($id) && ($id != '')) {
 
                 $methodUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/user/' . $id;
                 $ch = curl_init($methodUrl);

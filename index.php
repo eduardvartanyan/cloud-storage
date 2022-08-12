@@ -39,7 +39,7 @@ $urlList = [
     'file/' => [
         'GET' => 'File::getFile',
         'POST' => 'File::addFile',
-        'PUT' => 'File::editFile',
+        'PUT' => 'File::updateFile',
         "DELETE" => 'File::deleteFile'
     ],
     'login/' => [
@@ -73,7 +73,7 @@ if (isset($_GET) && !empty($_GET)) {
 
     foreach ($urlList as $key => $url) {
 
-        $patternWithId = '/^(' . str_replace('/', '\/', $key) . ')[0-9]$/';
+        $patternWithId = '/^(' . str_replace('/', '\/', $key) . ')[0-9]+$/';
         $patternWithoutId = '/^(' . str_replace('/', '\/', $key) . ')$/';
 
         if (isset($url[$requestMethod])) {
@@ -87,7 +87,7 @@ if (isset($_GET) && !empty($_GET)) {
                 $id = $urlArray[count($urlArray) - 1];
                 parse_str(file_get_contents('php://input'), $_PUT);
 
-                print_r($func(array_merge($_GET, $_PUT), $id));
+                print_r($func(array_merge($_GET, $_PUT, $_FILES), $id));
 
             } elseif (preg_match($patternWithoutId, $keysGetArray[0])) {
 
@@ -96,7 +96,7 @@ if (isset($_GET) && !empty($_GET)) {
                 $func = $url[$requestMethod];
                 parse_str(file_get_contents('php://input'), $_PUT);
 
-                print_r($func(array_merge($_GET, $_PUT)));
+                print_r($func(array_merge($_GET, $_PUT, $_FILES)));
 
             }
 

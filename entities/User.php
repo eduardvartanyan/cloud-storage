@@ -2,10 +2,10 @@
 
 class User {
 
-    static public function list($param, $id = NULL) : array
+    static public function list($param, $id = NULL)
     {
 
-        if (isset($id) && !empty($id)) {
+        if (isset($id) && ($id != '')) {
 
             http_response_code(405);
             return false;
@@ -22,16 +22,26 @@ class User {
 
     }
 
-    static public function get($param, $id = NULL) : string
+    static public function get($param, $id = NULL)
     {
 
-        if (isset($id) && !empty($id)) {
+        if (isset($id) && ($id != '')) {
 
             $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
             $statement->execute([$id]);
+            $result = $statement->fetch();
 
-            return json_encode($statement->fetch());
+            if ($result != false) {
+
+                return json_encode($result);
+
+            } else {
+
+                http_response_code(403);
+                return 'Пользователь с указанным id не найден';
+
+            }
 
         } else {
 
@@ -45,7 +55,7 @@ class User {
     static public function add($post, $id = NULL) : string
     {
 
-        if (isset($id) && !empty($id)) {
+        if (isset($id) && ($id != '')) {
 
             http_response_code(405);
             return false;
@@ -100,7 +110,7 @@ class User {
     static public function update($put, $id = NULL) : string
     {
 
-        if (isset($id) && !empty($id)) {
+        if (isset($id) && ($id != '')) {
 
             http_response_code(405);
             return false;
@@ -205,7 +215,7 @@ class User {
     static public function delete($param, $id = NULL) : string
     {
 
-        if (isset($id) && !empty($id)) {
+        if (isset($id) && ($id != '')) {
 
             $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
@@ -239,7 +249,7 @@ class User {
     static function login($get, $id = NULL) : string
     {
 
-        if (isset($id) && !empty($id)) {
+        if (isset($id) && ($id != '')) {
 
             http_response_code(405);
             return false;
@@ -325,7 +335,7 @@ class User {
     static function logout($param, $id = NULL)
     {
 
-        if (isset($id) && !empty($id)) {
+        if (isset($id) && ($id != '')) {
 
             http_response_code(405);
             return false;
@@ -360,7 +370,7 @@ class User {
     static function resetPassword($get, $id = NULL)
     {
 
-        if (isset($id) && !empty($id)) {
+        if (isset($id) && ($id != '')) {
 
             http_response_code(405);
             return false;
@@ -403,7 +413,7 @@ class User {
 
     static public function updatePassword($param, $id = NULL) {
 
-        if (isset($id) && !empty($id)) {
+        if (isset($id) && ($id != '')) {
 
             http_response_code(405);
             return false;
@@ -454,7 +464,7 @@ class User {
     static public function checkResetPasswordCode($param, $id = NULL)
     {
 
-        if (isset($id) && !empty($id)) {
+        if (isset($id) && ($id != '')) {
 
             http_response_code(405);
             return false;
