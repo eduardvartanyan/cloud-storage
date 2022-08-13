@@ -380,4 +380,69 @@ class File {
 
     }
 
+    static public function getShares($param, $id = NULL)
+    {
+
+        if (isset($id) && ($id != '')) {
+
+            $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
+            $statement = $connection->prepare("SELECT * FROM file WHERE id = ?");
+            $statement->execute([$id]);
+            $result = $statement->fetch();
+
+            if ($result != false) {
+
+                $statement = $connection->prepare("SELECT user_id FROM file_user WHERE file_id = ?");
+                return $statement->execute([$id]);
+
+            } else {
+
+                http_response_code(404);
+                return 'Файл не найден';
+
+            }
+
+        } else {
+
+            http_response_code(405);
+            return false;
+
+        }
+
+    }
+
+    static public function addShare($param, $id = NULL)
+    {
+
+        if (isset($id) && ($id != '')) {
+
+
+
+            return 'Доступ открыт';
+
+        } else {
+
+            http_response_code(405);
+            return false;
+
+        }
+
+    }
+
+    static public function deleteShare($param, $id = NULL)
+    {
+
+        if (isset($id) && ($id != '')) {
+
+            return 'Доступ закрыт';
+
+        } else {
+
+            http_response_code(405);
+            return false;
+
+        }
+
+    }
+
 }

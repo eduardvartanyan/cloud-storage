@@ -42,6 +42,11 @@ $urlList = [
         'PUT' => 'File::updateFile',
         "DELETE" => 'File::deleteFile'
     ],
+    'file/share/' => [
+        'GET' => 'File::getShares',
+        'PUT' => 'File::addShare',
+        'DELETE' => 'File::deleteShare'
+    ],
     'login/' => [
         'GET' => 'User::login'
     ],
@@ -75,6 +80,7 @@ if (isset($_GET) && !empty($_GET)) {
 
         $patternWithId = '/^(' . str_replace('/', '\/', $key) . ')[0-9]+$/';
         $patternWithoutId = '/^(' . str_replace('/', '\/', $key) . ')$/';
+        $patternWithTwoId = '/^(' . str_replace('/', '\/', $key) . ')[0-9]+\/[0-9]+$/';
 
         if (isset($url[$requestMethod])) {
 
@@ -97,6 +103,21 @@ if (isset($_GET) && !empty($_GET)) {
                 parse_str(file_get_contents('php://input'), $_PUT);
 
                 print_r($func(array_merge($_GET, $_PUT, $_FILES)));
+
+            } elseif (preg_match($patternWithTwoId, $keysGetArray[0])) {
+
+                $isValidRequest = true;
+
+                $func = $url[$requestMethod];
+                $urlArray = explode('/', $keysGetArray[0]);
+                $id = $urlArray[count($urlArray) - 2];
+                $userId = $urlArray[count($urlArray) - 1];
+                parse_str(file_get_contents('php://input'), $_PUT);
+
+                print_r($func(array_merge($_GET, $_PUT, $_FILES, array(
+                    'id' => $id,
+                    'user_id' => $userId
+                ))));
 
             }
 
