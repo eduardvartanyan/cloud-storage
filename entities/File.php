@@ -2,10 +2,12 @@
 
 class File {
 
-    static public function getFile($param, $id = NULL)
+    static public function getFile($param)
     {
 
-        if (isset($id) && ($id != '')) {
+        if (isset($param['id']) && ($param['id'] != '') && !isset($param['userId'])) {
+
+            $id = $param['id'];
 
             $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT * FROM file WHERE id = ?");
@@ -23,7 +25,7 @@ class File {
 
             }
 
-        } else {
+        } elseif (!isset($param['id']) && !isset($param['userId'])) {
 
             $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT * FROM file");
@@ -31,19 +33,19 @@ class File {
 
             return $statement->fetchAll();
 
-        }
-
-    }
-
-    static public function addFile($param, $id = NULL)
-    {
-
-        if (isset($id) && ($id != '')) {
+        } else {
 
             http_response_code(405);
             return false;
 
-        } else {
+        }
+
+    }
+
+    static public function addFile($param)
+    {
+
+        if (!isset($param['id']) && !isset($param['userId'])) {
 
             if (isset($param['file']) && !empty($param['file']['name'])) {
 
@@ -64,9 +66,9 @@ class File {
                         $fileHash .= '.' . $fileNameArray[count($fileNameArray) - 1];
                         move_uploaded_file($param['file']['tmp_name'], './files/' . $fileHash);
 
-                        if (isset($param['directory_id'])) {
+                        if (isset($param['directoryId'])) {
 
-                            $directoryId = (int) $param['directory_id'];
+                            $directoryId = (int) $param['directoryId'];
 
                         } else {
 
@@ -93,25 +95,30 @@ class File {
 
                 }
 
+            } else {
+
+                http_response_code(400);
+                return 'Файл не пришел';
+
             }
+
+        } else {
+
+            http_response_code(405);
+            return false;
 
         }
 
     }
 
-    static public function updateFile($param, $id = NULL)
+    static public function updateFile($param)
     {
 
-        if (isset($id) && ($id != '')) {
+        if (!isset($param['id']) && !isset($param['userId'])) {
 
-            http_response_code(405);
-            return false;
+            if (isset($param['fileId']) && !empty($param['fileId'])) {
 
-        } else {
-
-            if (isset($param['id']) && !empty($param['id'])) {
-
-                $id = $param['id'];
+                $id = $param['fileId'];
 
                 $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
                 $statement = $connection->prepare("SELECT * FROM file WHERE id = ?");
@@ -131,11 +138,11 @@ class File {
                             $statement = $connection->prepare("UPDATE file SET name = ? WHERE id = ?");
                             $statement->execute([$newName, $id]);
 
-                            $statusString .= 'Файл переименован';
+                            $statusString .= 'Файл переименован. ';
 
                         } else {
 
-                            $statusString .= 'Новое имя совпадает с текущим';
+                            $statusString .= 'Новое имя совпадает с текущим. ';
 
                         }
 
@@ -143,7 +150,7 @@ class File {
 
                     if (isset($param['directoryId']) && !empty($param['directoryId'])) {
 
-                        $directoryId = (int) $param['directory_id'];
+                        $directoryId = (int) $param['directoryId'];
 
                         if ($result['directory_id'] != $directoryId) {
 
@@ -184,16 +191,40 @@ class File {
 
             }
 
+        } else {
+
+            http_response_code(405);
+            return false;
+
         }
 
     }
 
-    static public function deleteFile($param, $id = NULL)
+    static public function deleteFile($param)
     {
 
-        if (isset($id) && ($id != '')) {
+        if (isset($param['id']) && ($param['id'] != '') && !isset($param['userId'])) {
 
-            return 'Удаление файла';
+            $id = $param['id'];
+
+            $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
+            $statement = $connection->prepare("SELECT * FROM file WHERE id = ?");
+            $statement->execute([$id]);
+            $result = $statement->fetch();
+
+            if ($result != false) {
+
+                $statement = $connection->prepare("DELETE FROM file WHERE id = ?");
+                $statement->execute([$id]);
+
+                return 'Файл удален';
+
+            } else {
+
+                http_response_code(404);
+                return 'Файл с указанным id не найден';
+
+            }
 
         } else {
 
@@ -204,15 +235,10 @@ class File {
 
     }
 
-    static public function addDirectory($param, $id = NULL)
+    static public function addDirectory($param)
     {
 
-        if (isset($id) && ($id != '')) {
-
-            http_response_code(405);
-            return false;
-
-        } else {
+        if (!isset($param['id']) && !isset($param['userId'])) {
 
             if (isset($param['name'])) {
 
@@ -220,9 +246,28 @@ class File {
 
                 if ($nameDirectory != '') {
 
+                    $parentId = 0;
+
+                    if (isset($param['parentId'])) {
+
+                        $parentId = (int) $param['parentId'];
+
+                        $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
+                        $statement = $connection->prepare("SELECT * FROM directory WHERE id = ?");
+                        $statement->execute([$parentId]);
+                        $result = $statement->fetch();
+
+                        if ($result == false) {
+
+                            $parentId = 0;
+
+                        }
+
+                    }
+
                     $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
                     $statement = $connection->prepare("INSERT INTO directory (name, parent_id) VALUES (?, ?)");
-                    $statement->execute([$param['name'], $param['parent']]);
+                    $statement->execute([$param['name'], $parentId]);
 
                     return 'Папка добавлена';
 
@@ -240,21 +285,21 @@ class File {
 
             }
 
-        }
-
-    }
-
-    static public function renameDirectory($param, $id = NULL)
-    {
-
-        if (isset($id) && ($id != '')) {
+        } else {
 
             http_response_code(405);
             return false;
 
-        } else {
+        }
 
-            if (isset($param['id']) && !empty($param['id'])) {
+    }
+
+    static public function renameDirectory($param)
+    {
+
+        if (!isset($param['id']) && !isset($param['userId'])) {
+
+            if (isset($param['directoryId']) && !empty($param['directoryId'])) {
 
                 if (isset($param['name'])) {
 
@@ -262,9 +307,11 @@ class File {
 
                     if ($directoryNewName != '') {
 
+                        $id = $param['directoryId'];
+
                         $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
                         $statement = $connection->prepare("SELECT * FROM directory WHERE id = ?");
-                        $statement->execute([$param['id']]);
+                        $statement->execute([$id]);
                         $result = $statement->fetch();
 
                         if ($result != false) {
@@ -272,7 +319,7 @@ class File {
                             if ($result['name'] != $directoryNewName) {
 
                                 $statement = $connection->prepare("UPDATE directory SET name = ? WHERE id = ?");
-                                $statement->execute([$directoryNewName, $result['id']]);
+                                $statement->execute([$directoryNewName, $id]);
 
                                 return 'Папка переименована';
 
@@ -310,14 +357,21 @@ class File {
 
             }
 
+        } else {
+
+            http_response_code(405);
+            return false;
+
         }
 
     }
 
-    static public function directoryInfo($param, $id = NULL)
+    static public function directoryInfo($param)
     {
 
-        if (isset($id) && ($id != '')) {
+        if (isset($param['id']) && ($param['id'] != '') && !isset($param['userId'])) {
+
+            $id = $param['id'];
 
             $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT * FROM directory WHERE id = ?");
@@ -347,10 +401,12 @@ class File {
 
     }
 
-    static public function deleteDirectory($param, $id = NULL)
+    static public function deleteDirectory($param)
     {
 
-        if (isset($id) && ($id != '')) {
+        if (isset($param['id']) && ($param['id'] != '') && !isset($param['userId'])) {
+
+            $id = $param['id'];
 
             $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT * FROM directory WHERE id = ?");
