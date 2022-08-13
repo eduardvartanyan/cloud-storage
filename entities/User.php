@@ -2,15 +2,10 @@
 
 class User {
 
-    static public function list($param, $id = NULL)
+    static public function list($param)
     {
 
-        if (isset($id) && ($id != '')) {
-
-            http_response_code(405);
-            return false;
-
-        } else {
+        if (!isset($param['id']) && !isset($param['userId'])) {
 
             $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT * FROM user");
@@ -18,18 +13,23 @@ class User {
 
             return $statement->fetchAll();
 
+        } else {
+
+            http_response_code(405);
+            return false;
+
         }
 
     }
 
-    static public function get($param, $id = NULL)
+    static public function get($param)
     {
 
-        if (isset($id) && ($id != '')) {
+        if (isset($param['id']) && ($param['id'] != '') && !isset($param['userId'])) {
 
             $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
-            $statement->execute([$id]);
+            $statement->execute([$param['id']]);
             $result = $statement->fetch();
 
             if ($result != false) {
@@ -52,21 +52,16 @@ class User {
 
     }
 
-    static public function add($post, $id = NULL) : string
+    static public function add($param)
     {
 
-        if (isset($id) && ($id != '')) {
+        if (!isset($param['id']) && !isset($param['userId'])) {
 
-            http_response_code(405);
-            return false;
+            if (isset($param['email']) && !empty($param['email'])) {
 
-        } else {
+                if (isset($param['password']) && !empty($param['password'])) {
 
-            if (isset($post['email']) && !empty($post['email'])) {
-
-                if (isset($post['password']) && !empty($post['password'])) {
-
-                    $email = $post['email'];
+                    $email = $param['email'];
 
                     $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
                     $statement = $connection->prepare("SELECT id FROM user WHERE email = ?");
@@ -75,7 +70,7 @@ class User {
 
                     if (($result == false)) {
 
-                        $hash = password_hash($post['password'], PASSWORD_BCRYPT);
+                        $hash = password_hash($param['password'], PASSWORD_BCRYPT);
 
                         $statement = $connection->prepare("INSERT INTO user (email, hash) VALUES (?, ?)");
                         $statement->execute([$email, $hash]);
@@ -103,23 +98,23 @@ class User {
 
             }
 
-        }
-
-    }
-
-    static public function update($put, $id = NULL) : string
-    {
-
-        if (isset($id) && ($id != '')) {
+        } else {
 
             http_response_code(405);
             return false;
 
-        } else {
+        }
 
-            if (isset($put['id']) && !empty($put['id'])) {
+    }
 
-                $id = $put['id'];
+    static public function update($param)
+    {
+
+        if (!isset($param['id']) && !isset($param['userId'])) {
+
+            if (isset($param['user']) && !empty($param['user'])) {
+
+                $id = $param['user'];
 
                 $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
                 $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
@@ -130,9 +125,9 @@ class User {
 
                     $statusString = '';
 
-                    if (isset($put['email']) && !empty($put['email'])) {
+                    if (isset($param['email']) && !empty($param['email'])) {
 
-                        $email = $put['email'];
+                        $email = $param['email'];
 
                         $statement = $connection->prepare("SELECT id FROM user WHERE email = ?");
                         $statement->execute([$email]);
@@ -154,9 +149,9 @@ class User {
 
                     }
 
-                    if (isset($put['password']) && !empty($put['password'])) {
+                    if (isset($param['password']) && !empty($param['password'])) {
 
-                        $hash = password_hash($put['password'], PASSWORD_BCRYPT);
+                        $hash = password_hash($param['password'], PASSWORD_BCRYPT);
 
                         $statement = $connection->prepare("UPDATE user SET hash = ? WHERE id = ?");
                         $statement->execute([$hash, $id]);
@@ -165,9 +160,9 @@ class User {
 
                     }
 
-                    if (isset($put['admin']) && !empty($put['admin'])) {
+                    if (isset($param['admin']) && !empty($param['admin'])) {
 
-                        $isAdmin = $put['admin'];
+                        $isAdmin = $param['admin'];
 
                         if (($isAdmin == 0) || ($isAdmin == 1)) {
 
@@ -208,14 +203,21 @@ class User {
 
             }
 
+        } else {
+
+            http_response_code(405);
+            return false;
+
         }
 
     }
 
-    static public function delete($param, $id = NULL) : string
+    static public function delete($param)
     {
 
-        if (isset($id) && ($id != '')) {
+        if (isset($param['id']) && ($param['id'] != '') && !isset($param['userId'])) {
+
+            $id = $param['id'];
 
             $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
@@ -246,15 +248,10 @@ class User {
 
     }
 
-    static function login($get, $id = NULL) : string
+    static function login($param)
     {
 
-        if (isset($id) && ($id != '')) {
-
-            http_response_code(405);
-            return false;
-
-        } else {
+        if (!isset($param['id']) && !isset($param['userId'])) {
 
             if (isset($_COOKIE['PHPSESSID']) && !empty($_COOKIE['PHPSESSID'])) {
 
@@ -280,18 +277,18 @@ class User {
 
             }
 
-            if (isset($get['email']) && !empty($get['email'])) {
+            if (isset($param['email']) && !empty($param['email'])) {
 
                 $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
                 $statement = $connection->prepare("SELECT * FROM user WHERE email = ?");
-                $statement->execute([$get['email']]);
+                $statement->execute([$param['email']]);
                 $result = $statement->fetch();
 
                 if ($result != false) {
 
-                    if (isset($get['password']) && !empty($get['password'])) {
+                    if (isset($param['password']) && !empty($param['password'])) {
 
-                        if (password_verify($get['password'], $result['hash'])) {
+                        if (password_verify($param['password'], $result['hash'])) {
 
                             session_start();
 
@@ -327,20 +324,20 @@ class User {
                 return 'Email пользователя не задан';
 
             }
+            
+        } else {
 
+            http_response_code(405);
+            return false;
+            
         }
 
     }
 
-    static function logout($param, $id = NULL)
+    static function logout($param)
     {
 
-        if (isset($id) && ($id != '')) {
-
-            http_response_code(405);
-            return false;
-
-        } else {
+        if (!isset($param['id']) && !isset($param['userId'])) {
 
             if (isset($_COOKIE['PHPSESSID'])) {
 
@@ -363,23 +360,23 @@ class User {
 
             }
 
-        }
-
-    }
-
-    static function resetPassword($get, $id = NULL)
-    {
-
-        if (isset($id) && ($id != '')) {
+        } else {
 
             http_response_code(405);
             return false;
 
-        } else {
+        }
 
-            if (isset($get['email']) && !empty($get['email'])) {
+    }
 
-                $email = $get['email'];
+    static function resetPassword($param)
+    {
+
+        if (!isset($param['id']) && !isset($param['userId'])) {
+
+            if (isset($param['email']) && !empty($param['email'])) {
+
+                $email = $param['email'];
 
                 $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
                 $statement = $connection->prepare("SELECT id FROM user WHERE email = ?");
@@ -407,18 +404,18 @@ class User {
 
             }
 
-        }
-
-    }
-
-    static public function updatePassword($param, $id = NULL) {
-
-        if (isset($id) && ($id != '')) {
+        } else {
 
             http_response_code(405);
             return false;
 
-        } else {
+        }
+
+    }
+
+    static public function updatePassword($param) {
+
+        if (!isset($param['id']) && !isset($param['userId'])) {
 
             $code = $param['code'];
 
@@ -457,36 +454,30 @@ class User {
 
             }
 
-        }
-
-    }
-
-    static public function checkResetPasswordCode($param, $id = NULL)
-    {
-
-        if (isset($id) && ($id != '')) {
+        } else {
 
             http_response_code(405);
             return false;
 
+        }
+
+    }
+
+    static public function checkResetPasswordCode($param)
+    {
+
+        $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
+        $statement = $connection->prepare("SELECT user_id FROM reset_password_code WHERE code = ?");
+        $statement->execute([$_GET['code']]);
+        $result = $statement->fetch();
+
+        if ($result != false) {
+
+            return true;
+
         } else {
 
-            $code = $param['code'];
-
-            $connection = new PDO('mysql:host=localhost;dbname=cloud_storage;charset=utf8', 'phpstorm','phpstorm');
-            $statement = $connection->prepare("SELECT user_id FROM reset_password_code WHERE code = ?");
-            $statement->execute([$_GET['code']]);
-            $result = $statement->fetch();
-
-            if ($result != false) {
-
-                return true;
-
-            } else {
-
-                return false;
-
-            }
+            return false;
 
         }
 
