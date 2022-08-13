@@ -45,7 +45,7 @@ class Admin {
 
     }
 
-    static public function get($param, $id = NULL)
+    static public function get($param)
     {
 
         $checkResult = self::checkAccess();
@@ -54,13 +54,18 @@ class Admin {
 
             $methodUrl = 'http://' . $_SERVER['HTTP_HOST'];
 
-            if (isset($id)) {
+            if (isset($param['id']) && ($param['id'] != '') && !isset($param['userId'])) {
 
-                $methodUrl .= '/users/' . $id;
+                $methodUrl .= '/users/' . $param['id'];
+
+            } elseif (!isset($param['id']) && !isset($param['userId'])) {
+
+                $methodUrl .= '/user/';
 
             } else {
 
-                $methodUrl .= '/user/';
+                http_response_code(405);
+                return false;
 
             }
 
@@ -82,19 +87,14 @@ class Admin {
 
     }
 
-    static public function update($param, $id = NULL)
+    static public function update($param)
     {
 
         $checkResult = self::checkAccess();
 
         if ($checkResult['code'] == 200) {
 
-            if (isset($id)) {
-
-                http_response_code(405);
-                return false;
-
-            } else {
+            if (!isset($param['id']) && !isset($param['userId'])) {
 
                 $methodUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/user/';
                 $ch = curl_init($methodUrl);
@@ -110,6 +110,11 @@ class Admin {
                 http_response_code($info['http_code']);
                 return $response;
 
+            } else {
+
+                http_response_code(405);
+                return false;
+
             }
 
         } else {
@@ -121,16 +126,16 @@ class Admin {
 
     }
 
-    static public function delete($param, $id = NULL)
+    static public function delete($param)
     {
 
         $checkResult = self::checkAccess();
 
         if ($checkResult['code'] == 200) {
 
-            if (isset($id) && ($id != '')) {
+            if (isset($param['id']) && ($param['id'] != '') && !isset($param['userId'])) {
 
-                $methodUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/user/' . $id;
+                $methodUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/user/' . $param['id'];
                 $ch = curl_init($methodUrl);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
