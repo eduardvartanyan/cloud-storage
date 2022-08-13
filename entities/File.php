@@ -380,10 +380,12 @@ class File {
 
     }
 
-    static public function getShares($param, $id = NULL)
+    static public function getShares($param)
     {
 
-        if (isset($id) && ($id != '')) {
+        if (isset($param['id']) && ($param['id'] != '') && !isset($param['userId'])) {
+
+            $id = $param['id'];
 
             $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
             $statement = $connection->prepare("SELECT * FROM file WHERE id = ?");
@@ -393,7 +395,8 @@ class File {
             if ($result != false) {
 
                 $statement = $connection->prepare("SELECT user_id FROM file_user WHERE file_id = ?");
-                return $statement->execute([$id]);
+                $statement->execute([$id]);
+                return $statement->fetchAll();
 
             } else {
 
@@ -411,14 +414,45 @@ class File {
 
     }
 
-    static public function addShare($param, $id = NULL)
+    static public function addShare($param)
     {
 
-        if (isset($id) && ($id != '')) {
+        if (isset($param['id']) && ($param['id'] != '') && isset($param['userId']) && ($param['userId'] != '')) {
 
+            $id = $param['id'];
+            $userId = $param['userId'];
 
+            $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
+            $statement = $connection->prepare("SELECT * FROM file WHERE id = ?");
+            $statement->execute([$id]);
+            $result = $statement->fetch();
 
-            return 'Доступ открыт';
+            if ($result != false) {
+
+                $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
+                $statement->execute([$userId]);
+                $result = $statement->fetch();
+
+                if ($result != false) {
+
+                    $statement = $connection->prepare("INSERT INTO file_user (file_id, user_id) VALUES (?, ?)");
+                    $statement->execute([$id, $userId]);
+
+                    return 'Доступ к файлу открыт';
+
+                } else {
+
+                    http_response_code(404);
+                    return 'Пользователь не найден';
+
+                }
+
+            } else {
+
+                http_response_code(404);
+                return 'Файл не найден';
+
+            }
 
         } else {
 
@@ -429,12 +463,57 @@ class File {
 
     }
 
-    static public function deleteShare($param, $id = NULL)
+    static public function deleteShare($param)
     {
 
-        if (isset($id) && ($id != '')) {
+        if (isset($param['id']) && ($param['id'] != '') && isset($param['userId']) && ($param['userId'] != '')) {
 
-            return 'Доступ закрыт';
+            $id = $param['id'];
+            $userId = $param['userId'];
+
+            $connection = new PDO('mysql:host=' . HOST . ';dbname=' . DBNAME . ';charset=utf8', USERNAME,PASSWORD);
+            $statement = $connection->prepare("SELECT * FROM file WHERE id = ?");
+            $statement->execute([$id]);
+            $result = $statement->fetch();
+
+            if ($result != false) {
+
+                $statement = $connection->prepare("SELECT * FROM user WHERE id = ?");
+                $statement->execute([$userId]);
+                $result = $statement->fetch();
+
+                if ($result != false) {
+
+                    $statement = $connection->prepare("SELECT * FROM file_user WHERE user_id = ? AND file_id = ?");
+                    $statement->execute([$id, $userId]);
+                    $result = $statement->fetch();
+
+                    if ($result != false) {
+
+                        $statement = $connection->prepare("DELETE FROM file_user WHERE user_id = ? AND file_id = ?");
+                        $statement->execute([$id, $userId]);
+
+                        return 'Доступ к файлу закрыт';
+
+                    } else {
+
+                        return 'Пользователь и так не имел доступ к файлу';
+
+                    }
+
+                } else {
+
+                    http_response_code(404);
+                    return 'Пользователь не найден';
+
+                }
+
+            } else {
+
+                http_response_code(404);
+                return 'Файл не найден';
+
+            }
 
         } else {
 
